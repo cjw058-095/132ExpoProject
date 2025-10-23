@@ -1,0 +1,105 @@
+// Breadboard Box with GPIO Cobbler Cable Opening
+// Adjust dimensions to match your breadboard
+
+// === CUSTOMIZATION PARAMETERS ===
+// Breadboard dimensions (standard full-size breadboard: 165x55mm)
+breadboard_length = 165;  // Length of breadboard
+breadboard_width = 55;    // Width of breadboard
+breadboard_height = 10;   // Height of breadboard + cobbler
+
+// Box parameters
+wall_thickness = 2.5;
+bottom_thickness = 2;
+clearance = 1;  // Extra space around breadboard
+
+// Cable opening
+cable_opening_width = 25;   // Width for ribbon cable
+cable_opening_height = 8;   // Height for ribbon cable
+wire_hole_diameter = 15;    // Diameter for general wire access
+
+// Mounting features
+include_lid = true;
+lid_gap = 0.3;  // Tolerance for lid fit
+
+// === CALCULATED DIMENSIONS ===
+inner_length = breadboard_length + clearance * 2;
+inner_width = breadboard_width + clearance * 2;
+inner_height = breadboard_height + clearance;
+
+outer_length = inner_length + wall_thickness * 2;
+outer_width = inner_width + wall_thickness * 2;
+outer_height = inner_height + bottom_thickness;
+
+// === MAIN MODEL ===
+module box_base() {
+    difference() {
+        // Outer box
+        cube([outer_length, outer_width, outer_height]);
+        
+        // Inner cavity
+        translate([wall_thickness, wall_thickness, bottom_thickness])
+            cube([inner_length, inner_width, inner_height + 1]);
+        
+        // Cable opening for GPIO cobbler (centered on one end)
+        translate([outer_length/2 - cable_opening_width/2, -0.1, bottom_thickness + 2])
+            cube([cable_opening_width, wall_thickness + 0.2, cable_opening_height]);
+        
+        // Wire access hole (on opposite end)
+        translate([outer_length/2, outer_width - wall_thickness/2, bottom_thickness + inner_height/2])
+            rotate([90, 0, 0])
+            cylinder(h=wall_thickness + 0.2, d=wire_hole_diameter, center=true, $fn=40);
+        
+        // Small mounting posts holes (optional - remove if not needed)
+        post_inset = 5;
+        post_diameter = 3;
+        for(x = [post_inset, inner_length - post_inset]) {
+            for(y = [post_inset, inner_width - post_inset]) {
+                translate([wall_thickness + x, wall_thickness + y, -0.1])
+                    cylinder(h=bottom_thickness + 0.2, d=post_diameter, $fn=20);
+            }
+        }
+    }
+}
+
+module box_lid() {
+    lid_length = outer_length - lid_gap * 2;
+    lid_width = outer_width - lid_gap * 2;
+    lip_height = 3;
+    lid_thickness = 2;
+    
+    difference() {
+        union() {
+            // Main lid
+            cube([lid_length, lid_width, lid_thickness]);
+            
+            // Lip that fits inside box
+            translate([wall_thickness - lid_gap, wall_thickness - lid_gap, lid_thickness])
+                cube([lid_length - (wall_thickness - lid_gap) * 2, 
+                      lid_width - (wall_thickness - lid_gap) * 2, 
+                      lip_height]);
+        }
+        
+        // Optional: ventilation holes
+        for(x = [20:20:lid_length-20]) {
+            for(y = [15:15:lid_width-15]) {
+                translate([x, y, -0.1])
+                    cylinder(h=lid_thickness + 0.2, d=3, $fn=20);
+            }
+        }
+    }
+}
+
+// === RENDER ===
+// Box base
+box_base();
+
+// Lid (positioned next to box for printing)
+if (include_lid) {
+    translate([outer_length + 10, 0, 0])
+        box_lid();
+}
+
+// Text labels (optional)
+translate([outer_length/2, outer_width + 5, 0])
+    linear_extrude(0.5)
+    text("BREADBOARD BOX", size=5, halign="center", font="Liberation Sans:style=Bold");
