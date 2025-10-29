@@ -5,6 +5,7 @@ import asyncio
 from Email_Bot import sendmail
 import random
 import threading
+from Save import *
 
 def main(page: ft.Page) -> None:
     page.title = 'Shared Locker'
@@ -164,6 +165,8 @@ def main(page: ft.Page) -> None:
                     # Clear the input fields
                     item_name_field.value = ""
                     item_quantity_field.value = ""
+                    # Save Inventory
+                    save_inventory(items_list)
                     page.update()
                 else:
                     error_text.value = "Please enter a vaild name and quantity"
@@ -174,6 +177,7 @@ def main(page: ft.Page) -> None:
             #Removes items from the list
             def remove_item(item_row):
                 items_list.controls.remove(item_row)
+                save_inventory(items_list)
                 page.update()
                 
             add_button = ElevatedButton(
@@ -230,14 +234,40 @@ def main(page: ft.Page) -> None:
             page.add(main_container)
             page.update()
 
+    def remove_item_by_text(item_text: str) -> None:
+        for row in items_list.controls:
+            if isinstance(row, ft.Row):
+                for control in row.controls:
+                    if isinstance(control, ft.Text) and control.value == item_text:
+                        items_list.controls.remove(row)
+                        save_inventory(items_list)
+                        page.update()
+                        return
+
     def show_login(e: None):
         #The show login function
-        #Shows the inventory and log in buttons 
+        #Shows the inventory and log in buttons
+        items_list.controls.clear()
+        for item_text in load_inventory():
+            item_row = ft.Row(
+                controls=[
+                    ft.Text(item_text, size=16),
+                    ft.ElevatedButton(
+                        text="Remove",
+                        on_click=lambda e, r=item_text: remove_item_by_text(r),
+                        bgcolor=ft.Colors.RED_400,
+                        color=ft.Colors.WHITE 
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            )
+            items_list.controls.append(item_row)
+
         Inventory_Col = Column(
             controls=[
                 Text("Current Inventory", size=30, weight=ft.FontWeight.W_500),
                 ft.Divider(),
-                *items_list.controls
+                items_list
             ],
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.START,
