@@ -48,9 +48,21 @@ def main(page: ft.Page) -> None:
         #for the email sender 
         #Make an email sending function
         user_email = text_username.value
+        wrong_email = Text("Email Invalid!", size=20)
+
 
         #sends the email!        
         # Clear the login screen
+        if not (
+            (user_email[:3].isalpha()) and
+            (user_email[3:6].isdigit()) and
+            (user_email[6:] == "@latech.edu")
+        ): 
+            page.add(wrong_email)
+            return
+        else:
+            pass
+            
         page.clean()
         loading_text = Text("Sending verification code...", size=20)
         loading_ring = ft.ProgressRing()
